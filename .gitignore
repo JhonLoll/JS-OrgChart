@@ -172,3 +172,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# DataBases
+*.sqlite3
+
+# Django Migrations
+*/migrations/*.py
+*/migrations/*.pyc

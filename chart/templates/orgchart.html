@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Organograma Interativo</title>
+    <script src="https://balkangraph.com/js/OrgChart.js"></script>
+    <style>
+        #tree {
+            width: 100%;
+            height: 700px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="tree"></div>
+
+    <script>
+        const chart = new OrgChart(document.getElementById("tree"), {
+            template: "ana",
+            enableSearch: false,
+            nodeBinding: {
+                field_0: "name",
+                field_1: "title",
+                img_0: "img"
+            },
+            nodes: {{ org_data|safe }}
+        });
+
+        chart.on('click', function(sender, args){
+            alert("Você clicou em: " + args.node.name);
+        });
+    </script>
+</body>
+</html>
