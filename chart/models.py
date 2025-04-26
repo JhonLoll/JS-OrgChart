@@ -25,7 +25,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)  # opcional
 
     objects = UserManager()
 
@@ -38,7 +37,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Colaborador(models.Model):
     imagem = models.TextField(blank=True, null=True)
     nome = models.CharField(max_length=100)
-    cargo = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     telefone = models.TextField(max_length=12)
     supervisor = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    cargo = models.ForeignKey("Cargo", on_delete=models.SET_DEFAULT, default=None)
+
+class Cargo(models.Model):
+    nome = models.CharField(max_length=100)
+    salario = models.FloatField(blank=True, default=0)
+    created_at = models.DateField(auto_now_add=True)

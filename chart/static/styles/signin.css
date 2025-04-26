@@ -31,3 +31,8 @@ body{
     margin-bottom: 5px;
     margin-top: 20px;
 }
+
+/* Error */
+.login-error{
+    color: red;
+}

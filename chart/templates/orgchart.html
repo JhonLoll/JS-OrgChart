@@ -1,34 +1,97 @@
 <!DOCTYPE html>
-<html>
+{% load static %}
+<html lang="en">
 <head>
-    <title>Organograma Interativo</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% comment %} CSS {% endcomment %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+
+
     <script src="https://balkangraph.com/js/OrgChart.js"></script>
     <style>
         #tree {
             width: 100%;
-            height: 700px;
+            height: 100%;
             margin: auto;
         }
     </style>
+    
+    <title>OrgChart</title>
 </head>
-<body>
-    <div id="tree"></div>
+<body class="bg-light">
+    <div class="navbar-orgchart" id="navbar-orgchart">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="container-fluid">
+            <a class="navbar-brand" href="#">OrgChart</a>
+            {% comment %} <form class="d-flex">
+              <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+              <button class="btn btn-outline-success" type="submit">Search</button>
+            </form> {% endcomment %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                  <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Home</a>
+                </li>
+                {% if user.is_staff %}
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      Admin
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                      <li><a class="dropdown-item" href="{% url 'register_employee' %}">Cadastrar Colaborador</a></li>
+                      <li><a class="dropdown-item" href="{% url 'list_employee' %}">Listar Colaborador</a></li>
+                      {% comment %} <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item" href="#">Something else here</a></li> {% endcomment %}
+                    </ul>
+                  </li>
+                {% endif %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'logout' %}" tabindex="-1">Sair</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+    </div>
+    <div class="container">
+      <div id="tree"></div>
 
-    <script>
-        const chart = new OrgChart(document.getElementById("tree"), {
-            template: "ana",
-            enableSearch: false,
-            nodeBinding: {
-                field_0: "name",
-                field_1: "title",
-                img_0: "img"
-            },
-            nodes: {{ org_data|safe }}
-        });
-
-        chart.on('click', function(sender, args){
-            alert("Você clicou em: " + args.node.name);
-        });
-    </script>
+      <script>
+          const chart = new OrgChart(document.getElementById("tree"), {
+              template: "ula",
+              enableSearch: true,
+              nodeBinding: {
+                  field_0: "name",
+                  field_1: "title",
+                  img_0: "img"
+              },
+              nodes: {{ data|safe }}
+          });
+  
+          chart.on('click', function(sender, args){
+              alert("Você clicou em: " + args.node.name);
+          });
+      </script>
+    </div>
+    <footer class="bg-body-tertiary text-center fixed-bottom">
+      <!-- Grid container -->
+      <div class="container p-4"></div>
+      <!-- Grid container -->
+    
+      <!-- Copyright -->
+      <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+        © 2025 Copyright:
+        <a class="text-body" href="">Veiga e Castro</a>
+      </div>
+      <!-- Copyright -->
+    </footer>
+    {% comment %} JS {% endcomment %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
+    <script src="{% static "scripts/script.js" %}"></script>
 </body>
 </html>
