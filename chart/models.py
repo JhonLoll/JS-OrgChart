@@ -35,14 +35,20 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class Colaborador(models.Model):
-    imagem = models.TextField(blank=True, null=True)
+    imagem = models.ImageField(blank=True, null=True)
     nome = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     telefone = models.TextField(max_length=12)
     supervisor = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
     cargo = models.ForeignKey("Cargo", on_delete=models.SET_DEFAULT, default=None)
 
+    def __str__(self):
+        return self.nome
+
 class Cargo(models.Model):
     nome = models.CharField(max_length=100)
     salario = models.FloatField(blank=True, default=0)
     created_at = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.nome

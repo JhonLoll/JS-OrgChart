@@ -1,4 +1,3 @@
-from os import name
 from django.urls import path
 from . import views
 
@@ -11,6 +10,7 @@ urlpatterns = [
     # ==================================================
     # Signin URL
     path('signin/', views.signin, name='signin'),
+    path('accounts/login/', views.signin, name='signin'),
 
     # Signup URL
     path('signup/', views.signup, name='signup'),
@@ -26,9 +26,18 @@ urlpatterns = [
     # Register Employee - URL
     path('registeremployee/', views.register_employee, name='register_employee'),
 
+    # Register Employee with Excel - URL
+    path('listemployee/upload_excel', views.view_upload_excel, name='view_upload_excel'),
+
+    # Download Excel - URL
+    path('download_excel/', views.view_download_excel, name='view_download_excel'),
+
     # List Employee - URL
     path('listemployee/', views.list_employee, name='list_employee'),
     path('listemployee/<int:id>', views.list_employee, name='list_employee'),
+
+    # Edit Employee - URL
+    path('editemployee/<int:id>', views.edit_employee, name='edit_employee'),
 
     # Delete Employee - URL
     path('deleteemployee/<int:id>', views.delete_employee, name='delete_employee'),

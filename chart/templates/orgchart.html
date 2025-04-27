@@ -62,23 +62,27 @@
       <div id="tree"></div>
 
       <script>
-          const chart = new OrgChart(document.getElementById("tree"), {
-              template: "ula",
-              enableSearch: true,
-              nodeBinding: {
-                  field_0: "name",
-                  field_1: "title",
-                  img_0: "img"
-              },
-              nodes: {{ data|safe }}
-          });
-  
-          chart.on('click', function(sender, args){
-              alert("Você clicou em: " + args.node.name);
-          });
+        OrgChart.SEARCH_PLACEHOLDER = "Pesquisar Colaborador";
+        const chart = new OrgChart(document.getElementById("tree"), {
+            template: "ula",
+            enableSearch: true,
+            editForm: {
+                readOnly: true,
+            },
+            nodeBinding: {
+                field_0: "name",
+                field_1: "title",
+                img_0: "img"
+            },
+            nodes: {{ data|safe }}
+        });
+
+        chart.on('click', function(sender, args){
+            alert("Você clicou em: " + args.node.name);
+        });
       </script>
     </div>
-    <footer class="bg-body-tertiary text-center fixed-bottom">
+    <footer class="bg-body-tertiary text-center text-body-secondary">
       <!-- Grid container -->
       <div class="container p-4"></div>
       <!-- Grid container -->
