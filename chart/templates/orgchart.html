@@ -24,7 +24,7 @@
     <div class="navbar-orgchart" id="navbar-orgchart">
       <nav class="navbar navbar-expand-lg navbar-light bg-light">
           <div class="container-fluid">
-            <a class="navbar-brand" href="#">OrgChart</a>
+            <a class="navbar-brand" href="{% url 'index' %}">OrgChart</a>
             {% comment %} <form class="d-flex">
               <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
               <button class="btn btn-outline-success" type="submit">Search</button>
@@ -63,16 +63,35 @@
 
       <script>
         OrgChart.SEARCH_PLACEHOLDER = "Pesquisar Colaborador";
+        
+        // Personalização dos rótulos dos campos do formulário
+        OrgChart.EDITFORM_FIELD_NAMES = {
+          'name': 'Nome',
+          'title': 'Cargo',
+          'email': 'E-mail',
+          'telefone': 'Telefone',
+          'supervisor': 'Supervisor'
+        };
+        
         const chart = new OrgChart(document.getElementById("tree"), {
             template: "ula",
             enableSearch: true,
             editForm: {
                 readOnly: true,
+                elements: [
+                  { type: 'textbox', label: 'Nome', binding: 'name' },
+                  { type: 'textbox', label: 'Cargo', binding: 'title' },
+                  { type: 'textbox', label: 'E-mail', binding: 'email' },
+                  { type: 'textbox', label: 'Telefone', binding: 'telefone' },
+                  { type: 'textbox', label: 'Supervisor', binding: 'supervisor_name' }
+                ]
             },
             nodeBinding: {
                 field_0: "name",
                 field_1: "title",
-                img_0: "img"
+                img_0: "img",
+                field_2: "email",
+                field_3: "telefone"
             },
             nodes: {{ data|safe }}
         });
@@ -94,6 +113,16 @@
       </div>
       <!-- Copyright -->
     </footer>
+
+    {% comment %} Mensagens {% endcomment %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
     {% comment %} JS {% endcomment %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
     <script src="{% static "scripts/script.js" %}"></script>

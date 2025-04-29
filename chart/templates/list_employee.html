@@ -15,7 +15,7 @@
     <div class="navbar-orgchart">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid">
-            <a class="navbar-brand" href="#">OrgChart</a>
+            <a class="navbar-brand" href="{% url 'index' %}">OrgChart</a>
             {% comment %} <form class="d-flex">
                 <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
                 <button class="btn btn-outline-success" type="submit">Search</button>
@@ -43,8 +43,9 @@
                     <a class="nav-link" href="{% url 'logout' %}" tabindex="-1">Sair</a>
                 </li>
                 </ul>
-                <form class="d-flex">
-                    <input class="form-control me-2" type="search" placeholder="Pesquisar" aria-label="Pesquisar">
+                <form class="d-flex" "{% url "list_employee" %}" method="get">
+                    {% comment %} {% csrf_token %} {% endcomment %}
+                    <input class="form-control me-2" name="search_query" type="search" placeholder="Pesquisar" aria-label="Pesquisar">
                     <button class="btn btn-outline-success" type="submit">Pesquisar</button>
                 </form>
             </div>
@@ -84,19 +85,15 @@
         <a href="{% url 'view_download_excel' %}" class="btn btn-info">Baixar Excel</a>
 
         {% comment %} Abre opção para subir arquivo excel {% endcomment %}
-        <button type="button" data-bs-toggle="modal" data-bs-target="#uploadModal" class="btn btn-primary">Upload Excel</button>
+        <button type="button" data-bs-toggle="modal" data-bs-target="#uploadModal" class="btn btn-primary disabled">Upload Excel</button>
 
         {% comment %} Exibe a mensagem de erro ou sucesso {% endcomment %}
         {% if error %}
-            <script>
-                alert("error");
-            </script>
+            <p class="alert alert-warning">{{ error }}</p>
         {% endif %}
 
         {% if sucess %}
-            <script>
-                alert("sucess");
-            </script>
+            <p class="alert alert-success">{{ sucess }}</p>
         {% endif %}
         
         <!-- Modal -->

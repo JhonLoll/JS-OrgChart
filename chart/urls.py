@@ -1,5 +1,9 @@
 from django.urls import path
+
+from OrgChart import settings
 from . import views
+
+from django.conf.urls.static import static
 
 # Insert URLs patterns
 
@@ -37,9 +41,12 @@ urlpatterns = [
     path('listemployee/<int:id>', views.list_employee, name='list_employee'),
 
     # Edit Employee - URL
-    path('editemployee/<int:id>', views.edit_employee, name='edit_employee'),
+    path('listemployee/editemployee/<int:id>', views.edit_employee, name='edit_employee'),
 
     # Delete Employee - URL
-    path('deleteemployee/<int:id>', views.delete_employee, name='delete_employee'),
+    path('listemployee/deleteemployee/<int:id>', views.delete_employee, name='delete_employee'),
     # ==================================================
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

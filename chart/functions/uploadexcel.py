@@ -1,36 +1,64 @@
-import pandas as pd
-from chart.models import Colaborador
-
-# Função para importar os dados do arquivo excel
 def upload_excel(file):
-    # Lê o arquivo excel
-    df = pd.read_excel(file)
+    # Lê o arquivo Excel
+    import pandas as pd
+    from chart.models import Cargo, Colaborador
+    
+    try:
+        # Lê o arquivo Excel
+        df = pd.read_excel(file)
+        
+        # Verifica se as colunas necessárias existem
+        required_columns = ['Nome', 'Email', 'Telefone', 'Cargo', 'Supervisor']
 
-    # Cria uma lista com os dados do arquivo excel
-    data = df.to_dict('records')
-
-    # Cria uma lista com os dados do arquivo excel
-    for row in data:
-        # Verifica se o colaborador já existe
-        if Colaborador.objects.filter(id=row['id']).exists():
-            # Se existir, atualiza os dados
-            colaborador = Colaborador.objects.get(id=row['id'])
-            colaborador.nome = row['nome']
-            colaborador.email = row['email']
-            colaborador.telefone = row['telefone']
-            colaborador.cargo = row['cargo']
-            colaborador.supervisor = row['supervisor']
-            colaborador.save()
-        else:
-            # Se não existir, cria um novo colaborador
-            colaborador = Colaborador(
-                id=row['id'],
-                nome=row['nome'],
-                email=row['email'],
-                telefone=row['telefone'],
-                cargo=row['cargo'],
-                supervisor=row['supervisor']
+        for column in required_columns:
+            if column not in df.columns:
+                return False
+        
+        # Processa cada linha do Excel
+        for _, row in df.iterrows():
+            # Obtém ou cria o cargo
+            cargo_nome = row['Cargo']
+            cargo, created = Cargo.objects.get_or_create(
+                nome=cargo_nome,
+                defaults={'salario': 0}  # Valor padrão para salário
             )
-            colaborador.save()
+            
+            # Obtém o supervisor (se existir)
+            supervisor = None
+            if pd.notna(row['Supervisor']):
+                supervisor_nome = row['Supervisor']
+                try:
+                    supervisor = Colaborador.objects.get(nome=supervisor_nome)
+                except Colaborador.DoesNotExist:
+                    # Supervisor não encontrado, será criado depois
+                    pass
+            
+            # Cria ou atualiza o colaborador
+            colaborador, created = Colaborador.objects.update_or_create(
+                email=row['Email'],
+                defaults={
+                    'Nome': row['Nome'],
+                    'Telefone': row['Telefone'] if pd.notna(row['Telefone']) else '',
+                    'Cargo': cargo,
+                    'Supervisor': supervisor
+                }
+            )
+        
+        # Segundo passo: atualizar supervisores que não foram encontrados
+        # (caso o supervisor esteja listado depois do colaborador no Excel)
+        for _, row in df.iterrows():
+            if pd.notna(row['Supervisor']):
+                colaborador = Colaborador.objects.get(email=row['Email'])
+                supervisor_nome = row['Supervisor']
+                try:
+                    supervisor = Colaborador.objects.get(nome=supervisor_nome)
+                    colaborador.supervisor = supervisor
+                    colaborador.save()
+                except Colaborador.DoesNotExist:
+                    # Supervisor não encontrado mesmo após processar todo o arquivo
+                    pass
+        
         return True
-    return False
+    except Exception as e:
+        print(f"Erro ao processar o arquivo Excel: {e}")
+        return False

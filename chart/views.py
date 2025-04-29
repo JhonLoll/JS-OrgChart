@@ -1,8 +1,13 @@
 import json
+import os
 from django.shortcuts import redirect, render
 from django.http import FileResponse, HttpResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
+# Importa a biblioteca para trabalhar com a imagem de perfil
+from PIL import Image
 
 from chart.models import Cargo, Colaborador, User
 
@@ -80,7 +85,10 @@ def orgchart(request):
             "id": colaborador.id,
             "name": colaborador.nome,
             "title": colaborador.cargo.nome if colaborador.cargo else "",
-            "img": colaborador.imagem if colaborador.imagem else "/static/img/user.png"
+            "img": colaborador.imagem.url if colaborador.imagem else "/static/img/user.png",
+            "email": colaborador.email,
+            "telefone": colaborador.telefone,
+            "supervisor_name": colaborador.supervisor.nome if colaborador.supervisor else ""
         }
         
         if colaborador.supervisor:
@@ -114,7 +122,22 @@ def register_employee(request):
 
             # Verifica se o campo "novo_cargo" está vazio
             if not novo_cargo:
-                return render(request, "register_employee.html", {"error": "O campo 'Novo Cargo' é obrigatório."})
+                messages.error(request, "O campo Novo Cargo é obrigatório.")
+                return render(request, "register_employee.html", {
+                    "form_list": {
+                        "nome": nome, 
+                        "email": email, 
+                        "telefone": telefone, 
+                        "supervisor": supervisor_id, 
+                        "cargo": selected_cargo, 
+                        "new_cargo": novo_cargo, 
+                        "salario": novo_salario, 
+                        "cargo_list": cargo, 
+                        "supervisor_list": supervisor,
+                    },
+                    "cargo": cargo,
+                    "supervisor": supervisor,
+                })
             
             cargo = Cargo(nome=novo_cargo, salario=float(novo_salario) if novo_salario else 0)
             cargo.save()
@@ -150,41 +173,145 @@ def register_employee(request):
 
 # View - Editar Colaborador
 def edit_employee(request, id):
-    pass
+    try:
+        employee = Colaborador.objects.get(id=id)
+    except Colaborador.DoesNotExist:
+        return redirect('list_employee')
+    
+    cargos = Cargo.objects.all()
+    supervisores = Colaborador.objects.exclude(id=id)  # Exclui o próprio colaborador da lista
+    
+    if request.method == "POST":
+        # Captura os dados do formulário
+        nome = request.POST.get("nome")
+        email = request.POST.get("email")
+        telefone = request.POST.get("telefone")
+        
+        # Verifica se é um novo cargo
+        selected_cargo = request.POST.get("cargo")
+        if selected_cargo == "new":
+            novo_cargo = request.POST.get("new_cargo")
+            novo_salario = request.POST.get("salario", 0)
+            
+            # Verifica se o campo "novo_cargo" está vazio
+            if not novo_cargo:
+                return render(request, "edit_employee.html", {
+                    "error": "O campo 'Novo Cargo' é obrigatório.",
+                    "employee": employee,
+                    "cargos": cargos,
+                    "supervisores": supervisores
+                })
+            
+            cargo = Cargo(nome=novo_cargo, salario=float(novo_salario) if novo_salario else 0)
+            cargo.save()
+        else:
+            try:
+                cargo = Cargo.objects.get(id=selected_cargo)
+            except Cargo.DoesNotExist:
+                cargo = employee.cargo  # Mantém o cargo atual se não encontrar
+        
+        # Verifica se é um novo supervisor
+        supervisor_id = request.POST.get("supervisor")
+        supervisor = None
+        if supervisor_id:
+            try:
+                supervisor = Colaborador.objects.get(id=supervisor_id)
+            except Colaborador.DoesNotExist:
+                supervisor = employee.supervisor  # Mantém o supervisor atual se não encontrar
+        
+        # Atualiza os dados do colaborador
+        employee.nome = nome
+        employee.email = email
+        employee.telefone = telefone
+        employee.cargo = cargo
+        employee.supervisor = supervisor
+        
+        # Processa a imagem de perfil
+        if 'imagem' in request.FILES:
+            imagem = request.FILES['imagem']
+            ext = os.path.splitext(imagem.name)[1]
+            filename = f"{employee.id}{ext}"
+
+            path = os.path.join('media', filename)
+
+            employee.imagem(path, imagem)
+        
+        employee.save()
+        
+        # Redireciona para a página de listagem
+        return redirect("list_employee")
+    
+    return render(request, 'edit_employee.html', {
+        "employee": employee,
+        "cargos": cargos,
+        "supervisores": supervisores
+    })
 
 # View - Listar Colaborador
 def list_employee(request, id=None):
-    colaboradores = Colaborador.objects.all()
+
+    if request.GET.get('search_query'):
+        # Captura o valor do campo de pesquisa
+        search_query = request.GET.get('search_query')
+
+        # Filtra os colaboradores com base na pesquisa
+        colaboradores = Colaborador.objects.filter(nome__icontains=search_query)
+
+    else:
+        # Se não for POST, busca todos os colaboradores
+        colaboradores = Colaborador.objects.all()
 
     return render(request, 'list_employee.html', {"employees": colaboradores})
 
 # View - Deletar Colaborador
-def delete_employee(request):
-    pass
+def delete_employee(request, id):
+    # Busca o colaborador pelo ID
+    colaborador = Colaborador.objects.get(id=id)
+    # Deleta o colaborador
+    colaborador.delete()
+
+    # Redireciona para a página de listagem
+    return redirect('list_employee')
 
 # ======================================
 # View - Upload Excel
+@login_required
 def view_upload_excel(request):
+    if request.method != 'POST':
+        # Se não for POST, redireciona para a página de listagem
+        return redirect('list_employee')
+    
     # Recebe o arquivo Excel
-    file = request.FILES.get('file')
+    file = request.FILES.get('excel_file')
 
     # Verifica se o arquivo foi enviado
-    if file:
-        # Verifica se o arquivo é um arquivo Excel
-        if file.name.endswith('.xlsx') or file.name.endswith('.xls'):
-            # Verifica se o arquivo é válido
-            if upload_excel(file):
-                # Retorna uma mensagem de sucesso
-                return render(request, 'list_employee.html', {'success': 'Arquivo importado com sucesso!'})
-            else:
-                # Retorna uma mensagem de erro
-                return render(request, 'list_employee.html', {'error': 'Erro ao importar o arquivo!'})
-        else:
-            # Retorna uma mensagem de erro
-            return render(request, 'list_employee.html', {'error': 'Arquivo inválido!'})
-    else:
+    if not file:
         # Retorna uma mensagem de erro
         return render(request, 'list_employee.html', {'error': 'Arquivo não enviado!'})
+    
+    # Verifica se o arquivo é um arquivo Excel
+    if not (file.name.endswith('.xlsx') or file.name.endswith('.xls')):
+        # Retorna uma mensagem de erro
+        return render(request, 'list_employee.html', {'error': 'Arquivo inválido! Apenas arquivos .xlsx ou .xls são aceitos.'})
+    
+    # Tenta processar o arquivo
+    try:
+        # Verifica se o arquivo é válido
+        if upload_excel(file):
+            # Retorna uma mensagem de sucesso
+            return render(request, 'list_employee.html', {'success': 'Arquivo importado com sucesso!'})
+        else:
+            # Retorna uma mensagem de erro
+            return render(request, 'list_employee.html', {'error': 'Erro ao importar o arquivo! Verifique o formato do arquivo.'})
+    except Exception as e:
+        # Log do erro
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Erro ao processar upload de Excel: {str(e)}")
+        
+        # Retorna uma mensagem de erro
+        return render(request, 'list_employee.html', {'error': f'Erro ao processar o arquivo: {str(e)}'})
+
 
 # View - Download Excel
 def view_download_excel(request):

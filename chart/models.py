@@ -35,7 +35,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class Colaborador(models.Model):
-    imagem = models.ImageField(blank=True, null=True)
+    imagem = models.ImageField(blank=True, null=True, default='user.png', upload_to='profile_pics')
     nome = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     telefone = models.TextField(max_length=12)
@@ -52,3 +52,4 @@ class Cargo(models.Model):
 
     def __str__(self):
         return self.nome
+
