@@ -8,7 +8,7 @@
     {% comment %} CSS {% endcomment %}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
     <link rel="stylesheet" href="{% static 'styles/list.css' %}">
-
+    
     <title>Listar Colaborador</title>
 </head>
 <body class="bg-light">
@@ -52,72 +52,80 @@
             </div>
         </nav>
     </div>
-    <div class="container mt-5 list-container">
-        <table class="table">
-            <thead>
-                <tr>
-                <th scope="col">#</th>
-                <th scope="col">Nome</th>
-                <th scope="col">E-mail</th>
-                <th scope="col">Telefone</th>
-                <th scope="col">Cargo</th>
-                <th scope="col">Supervisor</th>
-                <th scope="col">Editar</th>
-                <th scope="col">Deletar</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {% for employee in employees %}
-                <tr>
-                    <th scope="row">{{ employee.id }}</th>
-                    <td>{{ employee.nome }}</td>
-                    <td>{{ employee.email }}</td>
-                    <td>{{ employee.telefone }}</td>
-                    <td>{{ employee.cargo }}</td>
-                    <td>{{ employee.supervisor }}</td>
-                    <td><a href="{% url 'edit_employee' employee.id %}">Editar</a></td>
-                    <td><a href="{% url 'delete_employee' employee.id %}">Deletar</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% comment %} Botão para baixar os dados em excel {% endcomment %}
-        <a href="{% url 'view_download_excel' %}" class="btn btn-info">Baixar Excel</a>
+    
+    <!-- Adicione esta div wrapper -->
+    <div class="content-wrapper">
+        <div class="container mt-5 list-container">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Nome</th>
+                        <th scope="col">E-mail</th>
+                        <th scope="col">Telefone</th>
+                        <th scope="col">Cargo</th>
+                        <th scope="col">Supervisor</th>
+                        <th scope="col">Editar</th>
+                        <th scope="col">Deletar</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+                        {% for employee in employees %}
+                        <tr>
+                            <th scope="row">{{ employee.id }}</th>
+                            <td>{{ employee.nome }}</td>
+                            <td>{{ employee.email }}</td>
+                            <td>{{ employee.telefone }}</td>
+                            <td>{{ employee.cargo }}</td>
+                            <td>{{ employee.supervisor }}</td>
+                            <td><a href="{% url 'edit_employee' employee.id %}">Editar</a></td>
+                            <td><a href="{% url 'delete_employee' employee.id %}">Deletar</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3">
+                {% comment %} Botão para baixar os dados em excel {% endcomment %}
+                <a href="{% url 'view_download_excel' %}" class="btn btn-info">Baixar Excel</a>
 
-        {% comment %} Abre opção para subir arquivo excel {% endcomment %}
-        <button type="button" data-bs-toggle="modal" data-bs-target="#uploadModal" class="btn btn-primary disabled">Upload Excel</button>
+                {% comment %} Abre opção para subir arquivo excel {% endcomment %}
+                <button type="button" data-bs-toggle="modal" data-bs-target="#uploadModal" class="btn btn-primary disabled">Upload Excel</button>
+            </div>
 
-        {% comment %} Exibe a mensagem de erro ou sucesso {% endcomment %}
-        {% if error %}
-            <p class="alert alert-warning">{{ error }}</p>
-        {% endif %}
+            {% comment %} Exibe a mensagem de erro ou sucesso {% endcomment %}
+            {% if error %}
+                <p class="alert alert-warning mt-3">{{ error }}</p>
+            {% endif %}
 
-        {% if sucess %}
-            <p class="alert alert-success">{{ sucess }}</p>
-        {% endif %}
-        
-        <!-- Modal -->
-        <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="uploadModalLabel">Upload de Arquivo Excel</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form method="post" enctype="multipart/form-data" action="{% url 'view_upload_excel' %}">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="excelFile" class="form-label">Selecione o arquivo Excel</label>
-                                <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx,.xls">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Enviar</button>
-                        </form>
+            {% if sucess %}
+                <p class="alert alert-success mt-3">{{ sucess }}</p>
+            {% endif %}
+            
+            <!-- Modal -->
+            <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="uploadModalLabel">Upload de Arquivo Excel</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" enctype="multipart/form-data" action="{% url 'view_upload_excel' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="excelFile" class="form-label">Selecione o arquivo Excel</label>
+                                    <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx,.xls">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Enviar</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-            
     </div>
 
     <footer class="bg-body-tertiary text-center">

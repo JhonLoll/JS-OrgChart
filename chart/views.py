@@ -1,14 +1,12 @@
 import json
 import os
 from django.shortcuts import redirect, render
-from django.http import FileResponse, HttpResponse, HttpResponseRedirect
+from django.http import FileResponse
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 
-# Importa a biblioteca para trabalhar com a imagem de perfil
-from PIL import Image
-
+from OrgChart.settings import MEDIA_URL
 from chart.models import Cargo, Colaborador, User
 
 # Função para baixar o arquivo Excel
@@ -16,6 +14,20 @@ from chart.functions.downloadexcel import download_excel
 
 # Função para importar os dados do arquivo Excel
 from chart.functions.uploadexcel import upload_excel
+
+def admin_required(view_func):
+    """
+    Decorador que verifica se o usuário está autenticado e é admin.
+    Se não estiver autenticado, redireciona para a página de login.
+    Se estiver autenticado mas não for admin, redireciona para a página de acesso negado.
+    """
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('signin')
+        if not request.user.is_staff:
+            return redirect('access_denied')
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 @login_required
 def index(request):
@@ -27,8 +39,11 @@ def index(request):
         # Se não estiver logado, redireciona para a página de login
         return redirect("signin")
 
-# ======================================
-# View - Login
+# Função auxiliar para verificar se o usuário é admin
+def is_admin(user):
+    return user.is_authenticated and user.is_staff
+
+# NÃO ADICIONE DECORADORES AQUI - páginas de autenticação devem ser acessíveis para todos
 def signin(request):
     if request.method == "POST":
         # Captura os dados do formulário
@@ -40,42 +55,60 @@ def signin(request):
         if usuario:
             # Se existir, faz login e envia para a tela do organograma
             login(request=request, user=usuario)
+            messages.success(request, f"Bem-vindo, {usuario.nome}!")
             return redirect("orgchart")
         
         else:
             # Se não existir, retorna uma mensagem de erro
-            return render(request, "signin.html", {"error": "Usuário ou senha inválidos."})
+            messages.error(request, "Usuário ou senha inválidos.")
+            return render(request, "signin.html")
     
     # Caso não seja um POST, renderiza a página de login
     return render(request, "signin.html")
 
-
-# View - Cadastro
+# NÃO ADICIONE DECORADORES AQUI - páginas de cadastro devem ser acessíveis para todos
 def signup(request):
     if request.method == "POST":
         # Captura os dados do formulário
         nome = request.POST.get("nome")
         email = request.POST.get("email")
         senha = request.POST.get("password")
-
-        # Salva o novo usuario
-        usuario = User(nome=nome, email=email, password=senha)
-
-        usuario.save()
-
-        # Redireciona para a página de login
-        return render(request, "signin.html")
+        confirmar_senha = request.POST.get("confirm-password")
+        
+        # Verifica se as senhas coincidem
+        if senha != confirmar_senha:
+            messages.error(request, "As senhas não coincidem.")
+            return render(request, "signup.html")
+        
+        # Verifica se o email já existe
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Este email já está cadastrado.")
+            return render(request, "signup.html")
+        
+        try:
+            # Cria o usuário com senha criptografada
+            usuario = User(nome=nome, email=email)
+            usuario.set_password(senha)  # Criptografa a senha
+            usuario.save()
+            
+            messages.success(request, "Cadastro realizado com sucesso! Faça login para continuar.")
+            return redirect("signin")
+        except Exception as e:
+            messages.error(request, f"Erro ao criar usuário: {str(e)}")
+            return render(request, "signup.html")
     
     return render(request, "signup.html")
 
 # View Logout
 @login_required
 def _logout(request):
+    messages.info(request, "Você saiu do sistema com sucesso.")
     logout(request)
     return redirect("signin")
 
 # ======================================
 
+@login_required
 def orgchart(request):
     colaboradores = Colaborador.objects.all()
     data = []
@@ -85,7 +118,7 @@ def orgchart(request):
             "id": colaborador.id,
             "name": colaborador.nome,
             "title": colaborador.cargo.nome if colaborador.cargo else "",
-            "img": colaborador.imagem.url if colaborador.imagem else "/static/img/user.png",
+            "img": colaborador.imagem.url if colaborador.imagem else os.path.join(MEDIA_URL, "profile_pics", "user.png"),
             "email": colaborador.email,
             "telefone": colaborador.telefone,
             "supervisor_name": colaborador.supervisor.nome if colaborador.supervisor else ""
@@ -103,6 +136,8 @@ def orgchart(request):
 # ======================================
 
 # View - Cadastrar Colaborador
+@login_required
+@user_passes_test(is_admin, login_url='access_denied')
 def register_employee(request):
     cargo = Cargo.objects.all()
     supervisor = Colaborador.objects.all()
@@ -162,7 +197,8 @@ def register_employee(request):
         colaborador = Colaborador(nome=nome, email=email, telefone=telefone, supervisor=supervisor, cargo=cargo)
         colaborador.save()
 
-        # Redireciona para a página de listagem
+        # Adicionar mensagem de sucesso
+        messages.success(request, f"Colaborador {nome} cadastrado com sucesso!")
         return redirect("list_employee")
 
     return render(request, 'register_employee.html', {
@@ -172,10 +208,13 @@ def register_employee(request):
     )
 
 # View - Editar Colaborador
+@login_required
+@user_passes_test(is_admin)
 def edit_employee(request, id):
     try:
         employee = Colaborador.objects.get(id=id)
     except Colaborador.DoesNotExist:
+        messages.error(request, "Colaborador não encontrado.")
         return redirect('list_employee')
     
     cargos = Cargo.objects.all()
@@ -229,13 +268,20 @@ def edit_employee(request, id):
         # Processa a imagem de perfil
         if 'imagem' in request.FILES:
             imagem = request.FILES['imagem']
-            ext = os.path.splitext(imagem.name)[1]
-            filename = f"{employee.id}{ext}"
-
-            path = os.path.join('media', filename)
-
-            employee.imagem(path, imagem)
+            
+            # Salva a imagem antiga se existir
+            old_image = None
+            if employee.imagem:
+                # Salva a imagem antiga em um arquivo temporário
+                old_image = employee.imagem.path
         
+            # Atribuir diretamente ao campo imagem
+            employee.imagem = imagem
+
+            # Exclui a imagem antiga se existir
+            if old_image and os.path.exists(old_image):
+                os.remove(old_image)
+            
         employee.save()
         
         # Redireciona para a página de listagem
@@ -248,6 +294,7 @@ def edit_employee(request, id):
     })
 
 # View - Listar Colaborador
+@admin_required
 def list_employee(request, id=None):
 
     if request.GET.get('search_query'):
@@ -264,18 +311,29 @@ def list_employee(request, id=None):
     return render(request, 'list_employee.html', {"employees": colaboradores})
 
 # View - Deletar Colaborador
+@login_required
+@user_passes_test(is_admin, login_url='access_denied')
 def delete_employee(request, id):
-    # Busca o colaborador pelo ID
-    colaborador = Colaborador.objects.get(id=id)
-    # Deleta o colaborador
-    colaborador.delete()
-
+    try:
+        # Busca o colaborador pelo ID
+        colaborador = Colaborador.objects.get(id=id)
+        nome = colaborador.nome
+        # Deleta o colaborador
+        colaborador.delete()
+        
+        messages.success(request, f"Colaborador {nome} excluído com sucesso!")
+    except Colaborador.DoesNotExist:
+        messages.error(request, "Colaborador não encontrado.")
+    except Exception as e:
+        messages.error(request, f"Erro ao excluir colaborador: {str(e)}")
+    
     # Redireciona para a página de listagem
     return redirect('list_employee')
 
 # ======================================
 # View - Upload Excel
 @login_required
+@user_passes_test(is_admin, login_url='access_denied')
 def view_upload_excel(request):
     if request.method != 'POST':
         # Se não for POST, redireciona para a página de listagem
@@ -287,22 +345,24 @@ def view_upload_excel(request):
     # Verifica se o arquivo foi enviado
     if not file:
         # Retorna uma mensagem de erro
-        return render(request, 'list_employee.html', {'error': 'Arquivo não enviado!'})
+        messages.error(request, 'Arquivo não enviado!')
+        return redirect('list_employee')
     
     # Verifica se o arquivo é um arquivo Excel
     if not (file.name.endswith('.xlsx') or file.name.endswith('.xls')):
         # Retorna uma mensagem de erro
-        return render(request, 'list_employee.html', {'error': 'Arquivo inválido! Apenas arquivos .xlsx ou .xls são aceitos.'})
+        messages.error(request, 'Arquivo inválido! Apenas arquivos .xlsx ou .xls são aceitos.')
+        return redirect('list_employee')
     
     # Tenta processar o arquivo
     try:
         # Verifica se o arquivo é válido
         if upload_excel(file):
             # Retorna uma mensagem de sucesso
-            return render(request, 'list_employee.html', {'success': 'Arquivo importado com sucesso!'})
+            messages.success(request, 'Arquivo importado com sucesso!')
         else:
             # Retorna uma mensagem de erro
-            return render(request, 'list_employee.html', {'error': 'Erro ao importar o arquivo! Verifique o formato do arquivo.'})
+            messages.error(request, 'Erro ao importar o arquivo! Verifique o formato do arquivo.')
     except Exception as e:
         # Log do erro
         import logging
@@ -310,13 +370,26 @@ def view_upload_excel(request):
         logger.error(f"Erro ao processar upload de Excel: {str(e)}")
         
         # Retorna uma mensagem de erro
-        return render(request, 'list_employee.html', {'error': f'Erro ao processar o arquivo: {str(e)}'})
-
+        messages.error(request, f'Erro ao processar o arquivo: {str(e)}')
+    
+    return redirect('list_employee')
 
 # View - Download Excel
+@login_required
+@user_passes_test(is_admin, login_url='access_denied')
 def view_download_excel(request):
-    # Baixa o arquivo Excel
-    file_path = download_excel()
+    try:
+        # Baixa o arquivo Excel
+        file_path = download_excel()
+        
+        # Retorna o arquivo para download
+        return FileResponse(open(file_path, 'rb'), as_attachment=True)
+    except Exception as e:
+        messages.error(request, f"Erro ao gerar arquivo Excel: {str(e)}")
+        return redirect('list_employee')
 
-    # Retorna o arquivo para download
-    return FileResponse(open(file_path, 'rb'), as_attachment=True)
+# Não adicione decoradores aqui
+def access_denied(request):
+    messages.warning(request, "Você não tem permissão para acessar esta área.")
+    return render(request, 'access_denied.html')
+# ======================================

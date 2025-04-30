@@ -18,6 +18,8 @@ urlpatterns = [
 
     # Signup URL
     path('signup/', views.signup, name='signup'),
+    path('accounts/signup/', views.signup, name='signup'),
+    path('chart/signup/', views.signup, name='signup'),
 
     # Logout URL
     path('logout/', views._logout, name='logout'),
@@ -46,6 +48,7 @@ urlpatterns = [
     # Delete Employee - URL
     path('listemployee/deleteemployee/<int:id>', views.delete_employee, name='delete_employee'),
     # ==================================================
+    path('access-denied/', views.access_denied, name='access_denied'),
 ]
 
 if settings.DEBUG:
