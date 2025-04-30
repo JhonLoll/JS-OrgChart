@@ -1,6 +1,6 @@
 .list-container{
     width: 100%;
-    max-height: 70vh; /* Altura máxima para a tabela */
+    max-height: 100vh; /* Altura máxima para a tabela */
     overflow-y: auto; /* Adiciona scroll vertical quando necessário */
     margin-bottom: 30px;
 }
