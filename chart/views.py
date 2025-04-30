@@ -278,9 +278,11 @@ def edit_employee(request, id):
             # Atribuir diretamente ao campo imagem
             employee.imagem = imagem
 
-            # Exclui a imagem antiga se existir
+            # Exclui a imagem antiga se existir e não for a imagem padrão user.png
             if old_image and os.path.exists(old_image):
-                os.remove(old_image)
+                # Verifica se o nome do arquivo não é user.png
+                if not old_image.endswith('user.png'):
+                    os.remove(old_image)
             
         employee.save()
         

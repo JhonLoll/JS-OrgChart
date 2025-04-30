@@ -109,12 +109,12 @@
             alert("Você clicou em: " + args.node.name);
         });
       </script>
-    </div>
-    <div class="admin-controls">
+      <div class="admin-controls">
         {% if user.is_staff %}
         <a href="{% url 'list_employee' %}" class="btn btn-primary">Gerenciar Colaboradores</a>
         <a href="{% url 'view_download_excel' %}" class="btn btn-success">Baixar Excel</a>
         {% endif %}
+      </div>
     </div>
     <footer class="bg-body-tertiary text-center text-body-secondary">
       <!-- Grid container -->
