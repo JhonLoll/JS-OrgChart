@@ -115,11 +115,26 @@
         'supervisor': 'Supervisor'
       };
       
+      OrgChart.templates.ula.plus = 
+    `<circle cx="15" cy="15" r="15" fill="#ffffff" stroke="#aeaeae" stroke-width="1"></circle>
+    <text text-anchor="middle" style="font-size: 18px;cursor:pointer;" fill="#757575" x="15" y="22">{collapsed-children-count}</text>`;
+      OrgChart.templates.itTemplate = Object.assign({}, OrgChart.templates.ula);
+      OrgChart.templates.itTemplate.nodeMenuButton = "";
+      OrgChart.templates.itTemplate.nodeCircleMenuButton = {
+          radius: 18,
+          x: 250,
+          y: 60,
+          color: '#fff',
+          stroke: '#aeaeae'
+      };
       const chart = new OrgChart(document.getElementById("tree"), {
           template: "ula",
           enableSearch: true,
           mouseScrool: OrgChart.action.zoom,
           nodeMouseClick: OrgChart.action.details,
+          collapse: {
+            level: 2
+          },
           toolbar: {
             zoom: true,
             fit: true,
