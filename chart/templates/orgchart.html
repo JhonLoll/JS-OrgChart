@@ -85,26 +85,7 @@
         {% endfor %}
       {% endif %}
       
-      <div class="content-wrapper">
-        <div class="chart-toolbar bg-light p-2 border-bottom">
-          <div class="btn-toolbar" role="toolbar">
-            <div class="btn-group me-2" role="group">
-              <button id="btn-expand-all" class="btn btn-outline-primary btn-sm">Expandir Todos</button>
-              <button id="btn-collapse-all" class="btn btn-outline-primary btn-sm">Recolher Todos</button>
-            </div>
-            <div class="btn-group me-2" role="group">
-              <button id="btn-fit" class="btn btn-outline-secondary btn-sm">Ajustar à Tela</button>
-              <button id="btn-fullscreen" class="btn btn-outline-secondary btn-sm">Tela Cheia</button>
-            </div>
-            {% if user.is_staff %}
-            <div class="btn-group" role="group">
-              <a href="{% url 'list_employee' %}" class="btn btn-primary btn-sm">Gerenciar Colaboradores</a>
-              <a href="{% url 'view_download_excel' %}" class="btn btn-success btn-sm">Baixar Excel</a>
-            </div>
-            {% endif %}
-          </div>
-        </div>
-        
+      <div class="content-wrapper">        
         <div id="tree"></div>
       </div>
     </div>
@@ -139,6 +120,13 @@
           enableSearch: true,
           mouseScrool: OrgChart.action.zoom,
           nodeMouseClick: OrgChart.action.edit,
+          toolbar: {
+            zoom: true,
+            fit: true,
+            expandAll: true,
+            collapseAll: true,
+            fullScreen: true
+          },
           editForm: {
               readOnly: true,
               elements: [
@@ -159,27 +147,6 @@
           nodes: {{ data|safe }}
       });
 
-      // Adicionar funcionalidades aos botões
-      document.getElementById('btn-expand-all').addEventListener('click', function() {
-          chart.expandAll();
-      });
-      
-      document.getElementById('btn-collapse-all').addEventListener('click', function() {
-          chart.collapseAll();
-      });
-      
-      document.getElementById('btn-fit').addEventListener('click', function() {
-          chart.fit();
-      });
-      
-      document.getElementById('btn-fullscreen').addEventListener('click', function() {
-          if (document.fullscreenElement) {
-              document.exitFullscreen();
-          } else {
-              document.getElementById('tree').requestFullscreen();
-          }
-      });
-      
       // Ajustar o tamanho do chart quando a janela for redimensionada
       window.addEventListener('resize', function() {
           chart.fit();
