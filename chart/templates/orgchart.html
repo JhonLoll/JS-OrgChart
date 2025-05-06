@@ -8,13 +8,34 @@
     {% comment %} CSS {% endcomment %}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
 
-
     <script src="https://balkangraph.com/js/OrgChart.js"></script>
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 56px - 60px); /* Altura total menos navbar e footer */
+        }
+        
         #tree {
             width: 100%;
-            height: 100%;
-            margin: auto;
+            flex: 1;
+            min-height: 500px; /* Altura mínima para garantir visibilidade */
+        }
+        
+        .chart-toolbar {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .admin-controls {
+            margin: 10px 0;
         }
     </style>
     
@@ -25,10 +46,6 @@
       <nav class="navbar navbar-expand-lg navbar-light bg-light">
           <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'index' %}">OrgChart</a>
-            {% comment %} <form class="d-flex">
-              <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-              <button class="btn btn-outline-success" type="submit">Search</button>
-            </form> {% endcomment %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
@@ -45,8 +62,6 @@
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                       <li><a class="dropdown-item" href="{% url 'register_employee' %}">Cadastrar Colaborador</a></li>
                       <li><a class="dropdown-item" href="{% url 'list_employee' %}">Listar Colaborador</a></li>
-                      {% comment %} <li><hr class="dropdown-divider"></li>
-                      <li><a class="dropdown-item" href="#">Something else here</a></li> {% endcomment %}
                     </ul>
                   </li>
                 {% endif %}
@@ -58,64 +73,42 @@
           </div>
         </nav>
     </div>
-    <div class="container">
+    
+    <div class="container-fluid p-0">
       {% comment %} Mensagens {% endcomment %}
       {% if messages %}
         {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show m-2" role="alert">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
         {% endfor %}
       {% endif %}
-      <div id="tree"></div>
-
-      <script>
-        OrgChart.SEARCH_PLACEHOLDER = "Pesquisar Colaborador";
+      
+      <div class="content-wrapper">
+        <div class="chart-toolbar bg-light p-2 border-bottom">
+          <div class="btn-toolbar" role="toolbar">
+            <div class="btn-group me-2" role="group">
+              <button id="btn-expand-all" class="btn btn-outline-primary btn-sm">Expandir Todos</button>
+              <button id="btn-collapse-all" class="btn btn-outline-primary btn-sm">Recolher Todos</button>
+            </div>
+            <div class="btn-group me-2" role="group">
+              <button id="btn-fit" class="btn btn-outline-secondary btn-sm">Ajustar à Tela</button>
+              <button id="btn-fullscreen" class="btn btn-outline-secondary btn-sm">Tela Cheia</button>
+            </div>
+            {% if user.is_staff %}
+            <div class="btn-group" role="group">
+              <a href="{% url 'list_employee' %}" class="btn btn-primary btn-sm">Gerenciar Colaboradores</a>
+              <a href="{% url 'view_download_excel' %}" class="btn btn-success btn-sm">Baixar Excel</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
         
-        // Personalização dos rótulos dos campos do formulário
-        OrgChart.EDITFORM_FIELD_NAMES = {
-          'name': 'Nome',
-          'title': 'Cargo',
-          'email': 'E-mail',
-          'telefone': 'Telefone',
-          'supervisor': 'Supervisor'
-        };
-        
-        const chart = new OrgChart(document.getElementById("tree"), {
-            template: "ula",
-            enableSearch: true,
-            editForm: {
-                readOnly: true,
-                elements: [
-                  { type: 'textbox', label: 'Nome', binding: 'name' },
-                  { type: 'textbox', label: 'Cargo', binding: 'title' },
-                  { type: 'textbox', label: 'E-mail', binding: 'email' },
-                  { type: 'textbox', label: 'Telefone', binding: 'telefone' },
-                  { type: 'textbox', label: 'Supervisor', binding: 'supervisor_name' }
-                ]
-            },
-            nodeBinding: {
-                field_0: "name",
-                field_1: "title",
-                img_0: "img",
-                field_2: "email",
-                field_3: "telefone"
-            },
-            nodes: {{ data|safe }}
-        });
-
-        {% comment %} chart.on('click', function(sender, args){
-            alert("Você clicou em: " + args.node.name);
-        }); {% endcomment %}
-      </script>
-      <div class="admin-controls">
-        {% if user.is_staff %}
-        <a href="{% url 'list_employee' %}" class="btn btn-primary">Gerenciar Colaboradores</a>
-        <a href="{% url 'view_download_excel' %}" class="btn btn-success">Baixar Excel</a>
-        {% endif %}
+        <div id="tree"></div>
       </div>
     </div>
+    
     <footer class="bg-body-tertiary text-center text-body-secondary">
       <!-- Grid container -->
       <div class="container p-4"></div>
@@ -128,6 +121,78 @@
       </div>
       <!-- Copyright -->
     </footer>
+    
+    <script>
+      OrgChart.SEARCH_PLACEHOLDER = "Pesquisar Colaborador";
+      
+      // Personalização dos rótulos dos campos do formulário
+      OrgChart.EDITFORM_FIELD_NAMES = {
+        'name': 'Nome',
+        'title': 'Cargo',
+        'email': 'E-mail',
+        'telefone': 'Telefone',
+        'supervisor': 'Supervisor'
+      };
+      
+      const chart = new OrgChart(document.getElementById("tree"), {
+          template: "ula",
+          enableSearch: true,
+          mouseScrool: OrgChart.action.zoom,
+          nodeMouseClick: OrgChart.action.edit,
+          editForm: {
+              readOnly: true,
+              elements: [
+                { type: 'textbox', label: 'Nome', binding: 'name' },
+                { type: 'textbox', label: 'Cargo', binding: 'title' },
+                { type: 'textbox', label: 'E-mail', binding: 'email' },
+                { type: 'textbox', label: 'Telefone', binding: 'telefone' },
+                { type: 'textbox', label: 'Supervisor', binding: 'supervisor_name' }
+              ]
+          },
+          nodeBinding: {
+              field_0: "name",
+              field_1: "title",
+              img_0: "img",
+              field_2: "email",
+              field_3: "telefone"
+          },
+          nodes: {{ data|safe }}
+      });
+
+      // Adicionar funcionalidades aos botões
+      document.getElementById('btn-expand-all').addEventListener('click', function() {
+          chart.expandAll();
+      });
+      
+      document.getElementById('btn-collapse-all').addEventListener('click', function() {
+          chart.collapseAll();
+      });
+      
+      document.getElementById('btn-fit').addEventListener('click', function() {
+          chart.fit();
+      });
+      
+      document.getElementById('btn-fullscreen').addEventListener('click', function() {
+          if (document.fullscreenElement) {
+              document.exitFullscreen();
+          } else {
+              document.getElementById('tree').requestFullscreen();
+          }
+      });
+      
+      // Ajustar o tamanho do chart quando a janela for redimensionada
+      window.addEventListener('resize', function() {
+          chart.fit();
+      });
+      
+      // Ajustar o tamanho inicial
+      window.addEventListener('load', function() {
+          setTimeout(function() {
+              chart.fit();
+          }, 100);
+      });
+    </script>
+    
     {% comment %} JS {% endcomment %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
     <script src="{% static "scripts/script.js" %}"></script>
