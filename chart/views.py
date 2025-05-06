@@ -29,15 +29,15 @@ def admin_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-@login_required
+# @login_required
 def index(request):
     # Verifica se o usuário está logado
-    if request.user.is_authenticated:
+    # if request.user.is_authenticated:
         # Se estiver logado, renderiza a página do organograma
-        return redirect("orgchart")
-    else:
-        # Se não estiver logado, redireciona para a página de login
-        return redirect("signin")
+    return redirect("orgchart")
+    # else:
+    #     # Se não estiver logado, redireciona para a página de login
+    #     return redirect("signin")
 
 # Função auxiliar para verificar se o usuário é admin
 def is_admin(user):
@@ -108,7 +108,7 @@ def _logout(request):
 
 # ======================================
 
-@login_required
+# @login_required
 def orgchart(request):
     colaboradores = Colaborador.objects.all()
     data = []
@@ -129,10 +129,10 @@ def orgchart(request):
             
         data.append(item)
 
-    if request.user.is_authenticated:
-        return render(request, "orgchart.html", {"data": json.dumps(data)})
+    # if request.user.is_authenticated:
+    return render(request, "orgchart.html", {"data": json.dumps(data)})
     
-    return redirect("signin")
+    # return redirect("signin")
 # ======================================
 
 # View - Cadastrar Colaborador

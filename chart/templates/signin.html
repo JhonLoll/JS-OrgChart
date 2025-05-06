@@ -18,7 +18,8 @@
         <div class="form-container position-absolute top-50 start-50 translate-middle">
             <form action="{% url 'signin' %}" method="post">
                 {% csrf_token %}
-                <h1>Entrar</h1><br>
+                <h1>Entrar</h1>
+                <p class="mb-4">Caso prefira, acesse como <a href="{% url "orgchart" %}" class="alert-link">visitante</a></p>
                 {% if error %}
                     <p class="login-error">{{ error }}</p>
                 {% endif %}
@@ -31,7 +32,7 @@
                     <label for="password">Senha</label>
                 </div>
                 <div>
-                    <p class="text-center">Ainda não tem uma conta? <a href="{% url "signup" %}">Cadastrar</a></p>
+                    <p class="text-center">Ainda não tem uma conta? <a href="{% url "signup" %}" class="">Cadastrar</a></p>
                 </div>
                 <div class="button-container">
                     <button type="submit" class="btn btn-primary">Entrar</button>
